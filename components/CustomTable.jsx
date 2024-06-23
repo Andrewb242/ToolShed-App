@@ -2,13 +2,13 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const QuoteTable = ({ rowState, updateRow, addRow, deleteRow, copyToClipboard }) => {
+const CustomTable = ({ rowState, updateRow, addRow, deleteRow, copyToClipboard, isBill=false }) => {
 
   const renderRow = ({ item }) => (
     <View style={styles.row}>
       <TextInput
         style={styles.input}
-        placeholder="Expected Expense"
+        placeholder={!isBill ? 'Expected Expense' : 'Expense'}
         value={item.expectedExpense}
         onChangeText={(text) => updateRow(item.id, 'expectedExpense', text)}
       />
@@ -27,9 +27,6 @@ const QuoteTable = ({ rowState, updateRow, addRow, deleteRow, copyToClipboard })
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Quote Table:</Text>
-      </View>
       <FlatList
         data={rowState}
         renderItem={renderRow}
@@ -105,4 +102,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default QuoteTable;
+export default CustomTable;

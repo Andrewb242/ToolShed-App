@@ -16,7 +16,8 @@ const jobData = {
 //All Equipment in inventory
 const equipmentData = ["Hammer", "Nails", 'Rake', 'Screw Driver', 'Lawn Mower', 'Wheel Barrow', 'Filter Mask']
 
-const quoteData = [{ id: 1, expectedExpense: "40yd of Mulch", cost: "500" }, { id: 2, expectedExpense: "60 buckets of stones", cost: "200" } ]
+const quoteData = [{ id: 1, expectedExpense: "40yd of Mulch", cost: "500" }, { id: 2, expectedExpense: "60 buckets of stones", cost: "200" }]
+const billData =[{ id: 1, expectedExpense: "30yd of Mulch", cost: "400" }, { id: 2, expectedExpense: "2 buckets of stones", cost: "5" }]
 
 const Jobs = () => {
   return (
@@ -25,7 +26,8 @@ const Jobs = () => {
           <Link href={{pathname:'jobDisplay', params: {
             jobData: JSON.stringify(jobData),
             quoteData: JSON.stringify(quoteData),
-            equipmentData: JSON.stringify(equipmentData)
+            equipmentData: JSON.stringify(equipmentData),
+            billData: JSON.stringify(billData),
             }}}>Test Job</Link>
           <Text>Job 2</Text>
           <Text>Job 3</Text>

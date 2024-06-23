@@ -5,7 +5,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import DatePicker, { getToday, getFormatedDate} from 'react-native-modern-datepicker'
 import EquipmentTag from '../../../components/EquipmentTag';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import QuoteTable from '../../../components/QuoteTable';
+import CustomTable from '../../../components/CustomTable';
 import * as Clipboard from 'expo-clipboard'
 
 const JobDisplay = () => {
@@ -16,10 +16,11 @@ const JobDisplay = () => {
   const [noteIsFocused, setNoteIsFocused] = useState(false)
 
   // Parsing input data
-  const { jobData, quoteData, equipmentData } = useLocalSearchParams()
+  const { jobData, quoteData, billData, equipmentData } = useLocalSearchParams()
 
   const job = jobData ? JSON.parse(jobData) : {}
   const quotes = quoteData ? JSON.parse(quoteData) : []
+  const bills = billData ? JSON.parse(billData) : []
   const equipment = equipmentData ? JSON.parse(equipmentData) : []
 
   const [jobDataState, setJobDataState] = useState({
@@ -117,12 +118,53 @@ const JobDisplay = () => {
     }
     copyData.push(`Total: $${total}`)
     const clipboardContent = copyData.join('\n')
-
-    try {
+    if (copyData.length > 2) {
       Clipboard.setStringAsync(clipboardContent)
       Alert.alert('Copied')
-    } catch(error) {
-      Alert.alert(`${error}`)  
+    } else {
+      Alert.alert('No Data')
+    }
+  }
+
+  // Bill table handling
+  const [billRows, setBillRows] = useState(bills)
+  const addBillRow = () => {
+    setBillRows([...billRows, { id: billRows.length + 1, expectedExpense: '', cost: '' }]);
+  };
+  const deleteBillRow = (id) => {
+    const filteredRows = billRows.filter(row => row.id !== id);
+    const reassignedRows = filteredRows.map((row, index) => ({
+    ...row,
+    id: index + 1
+  }));
+  setBillRows(reassignedRows);
+  }
+  const updateBillRow = (id, key, value) => {
+    const updatedRows = billRows.map(row => {
+      if (row.id === id) {
+        return { ...row, [key]: value }
+      }
+      return row;
+    });
+    setBillRows(updatedRows)
+  }
+
+  async function copyBillToClipboard() {
+    let copyData = ['Here is your bill information:']
+    let total = 0
+    for (const element of billRows) {
+      if (element.expectedExpense) {
+        copyData = [...copyData, `${element.expectedExpense}: $${element.cost}`]
+        total += parseFloat(element.cost)
+      }
+    }
+    copyData.push(`Total: $${total}`)
+    const clipboardContent = copyData.join('\n')
+    if (copyData.length > 2) {
+      Clipboard.setStringAsync(clipboardContent)
+      Alert.alert('Copied')
+    } else {
+      Alert.alert('No Data')
     }
   }
 
@@ -215,7 +257,7 @@ const JobDisplay = () => {
 
 
         <Text style={styles.headerText}>Equipment Needed:</Text>
-        <View style={{flexDirection: 'row', padding: 5, flexWrap: 'wrap', gap: 7}}>
+        <View style={{flexDirection: 'row', padding: 15, flexWrap: 'wrap', gap: 7}}>
           {jobDataState.jobEquipment && jobDataState.jobEquipment.length > 0 ? (jobDataState.jobEquipment.sort().map((equipmentItem, index)=>(
             <EquipmentTag 
               key={index}
@@ -234,7 +276,9 @@ const JobDisplay = () => {
         <Modal animationType='slide' transparent={true} visible={equipmentPickerOpen}>
           <View style={modalStyles.centeredView}>
             <View style={modalStyles.modalView}>
-              <ScrollView className='p-3' style={{
+              <ScrollView style={{}}>
+                <View style={{
+                padding: 10,
                 flexDirection: 'row',
                 flexWrap: 'wrap',
                 gap: 7, 
@@ -253,6 +297,7 @@ const JobDisplay = () => {
                   ), [])):(
                     null
                   )}
+                </View>
               </ScrollView>
               <TouchableOpacity onPress={() => {setEquipmentPickerOpen(false)}}>
                 <Text style={{color: '#cad2c5'}}>Close</Text>
@@ -276,12 +321,24 @@ const JobDisplay = () => {
       
       <View>
         <Text style={styles.headerText}>Quote:</Text>
-        <QuoteTable 
+        <CustomTable 
         rowState={quoteRows}
         addRow={addQuoteRow}
         deleteRow={deleteQuoteRow}
         updateRow={updateQuoteRow}
         copyToClipboard={copyQuoteToClipboard}
+        />
+      </View>
+
+      <View>
+        <Text style={styles.headerText}>Bill:</Text>
+        <CustomTable 
+        rowState={billRows}
+        addRow={addBillRow}
+        deleteRow={deleteBillRow}
+        updateRow={updateBillRow}
+        copyToClipboard={copyBillToClipboard}
+        isBill={true}
         />
       </View>
 
@@ -345,7 +402,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     paddingTop: 10,
     marginLeft: 15,
-    color: '#2f3e46'
+    color: '#2f3e46',
+    fontWeight: '600'
   },
   equipmentPickerButton: {
     flexDirection: 'row',

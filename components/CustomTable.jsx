@@ -20,7 +20,7 @@ const CustomTable = ({ rowState, updateRow, addRow, deleteRow, copyToClipboard, 
         keyboardType='numeric'
       />
       <TouchableOpacity onPress={() => deleteRow(item.id)}>
-        <Feather name="x-circle" size={24} color="#cad2c5" />
+        <Feather name="x-circle" size={24} color="#354f52" />
       </TouchableOpacity>
     </View>
   );
@@ -71,14 +71,14 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#354f52',
     padding: 8,
     marginRight: 10,
     color: '#52796f',
   },
   costInupt: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#354f52',
     padding: 8,
     marginRight: 10,
     color: '#52796f',
@@ -97,8 +97,11 @@ const styles = StyleSheet.create({
   copyButton: {
   },
   footerText: {
-    color: '#cad2c5', 
-    fontWeight: 200
+    color: '#84a98c', 
+    fontWeight: 200,
+    borderWidth: 1,
+    padding: 5,
+    borderColor: '#2f3e46'
   }
 });
 

@@ -7,7 +7,6 @@ const RootLayout = () => {
     
     return (
         <>
-            <StatusBar style="light" />
             <View style={{flex: 1}}>
                 <Stack>
                     <Stack.Screen name="index" options={{headerShown: false}}/>
@@ -30,6 +29,7 @@ const RootLayout = () => {
                 bottom: 0,
             }}
             />
+            <StatusBar style="light" />
         </>
     )
 }

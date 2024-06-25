@@ -170,7 +170,7 @@ const JobDisplay = () => {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <ScrollView style={{flex: 1, backgroundColor: '#84a98c'}}>
+    <ScrollView style={{flex: 1, backgroundColor: '#cad2c5'}}>
       <View>
         <Text style={styles.headerText}>Address:</Text>
         <TextInput 
@@ -204,19 +204,7 @@ const JobDisplay = () => {
         
         <Text style={styles.headerText}>Scheduled Date:</Text>
         <View
-        style={{
-          flexDirection: 'row',
-          gap: 10,
-          alignItems: 'center',
-          backgroundColor: '#cad2c5',
-          borderColor: '#cad2c5',
-          borderWidth: 1,
-          borderRadius: 15,
-          alignSelf: 'flex-start',
-          padding: 7,
-          marginTop: 10,
-          marginLeft: 15,
-        }}>
+        style={styles.dateTextInput}>
           <TextInput
             value={formatDate(jobDataState.jobDate)}
             editable={false}
@@ -227,7 +215,7 @@ const JobDisplay = () => {
             }}
           />
           <TouchableOpacity onPress={() => {setDatePickerOpen(!datePickerOpen)}}>
-            <FontAwesome6 name="edit" size={24} color="black" />
+            <FontAwesome6 name="edit" size={22} color="#2f3e46" />
           </TouchableOpacity>
         </View>
         <Modal animationType='slide' transparent={true} visible={datePickerOpen}>
@@ -277,16 +265,7 @@ const JobDisplay = () => {
           <View style={modalStyles.centeredView}>
             <View style={modalStyles.modalView}>
               <ScrollView style={{}}>
-                <View style={{
-                padding: 10,
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: 7, 
-                minHeight: 350, 
-                backgroundColor: '#354f52', 
-                minWidth: 300,
-                borderRadius: 20,
-                marginBottom: 10}}>
+                <View style={modalStyles.equipmentTagView}>
                 {filteredEquipmentData && filteredEquipmentData.length > 0 ? (filteredEquipmentData.sort().map((equipmentItem, index)=>(
                   <EquipmentTag 
                     key={index}
@@ -368,8 +347,8 @@ const styles = StyleSheet.create({
   textInput: {
     color: '#354f52',
     backgroundColor: '#cad2c5',
-    borderColor: '#cad2c5',
-    borderWidth: 1,
+    borderColor: '#354f52',
+    borderWidth: 2,
     borderRadius: '50%',
     padding: 10,
     minWidth: 250,
@@ -379,11 +358,24 @@ const styles = StyleSheet.create({
     marginBottom:5,
     flexWrap: 'wrap',
   },
+  dateTextInput:{
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    backgroundColor: '#cad2c5',
+    borderColor: '#354f52',
+    borderWidth: 2,
+    borderRadius: 15,
+    alignSelf: 'flex-start',
+    padding: 7,
+    marginTop: 10,
+    marginLeft: 15,    
+  },
   textInputNote: {
     color: '#354f52',
     backgroundColor: '#cad2c5',
-    borderColor: '#cad2c5',
-    borderWidth: 1,
+    borderColor: '#354f52',
+    borderWidth: 2,
     borderRadius: '5%',
     padding: 10,
     minWidth: 360,
@@ -396,7 +388,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   textInputFucused: {
-    borderColor: '#354f52'
+    borderColor: '#84a98c',
   },
   headerText: {
     fontSize: 20,
@@ -442,6 +434,17 @@ const modalStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  equipmentTagView: {
+    padding: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7, 
+    minHeight: 350, 
+    backgroundColor: '#354f52', 
+    minWidth: 300,
+    borderRadius: 20,
+    marginBottom: 10
+  }
   }
 )
 

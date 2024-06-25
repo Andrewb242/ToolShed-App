@@ -38,7 +38,7 @@ const Inventory = () => {
         <View style={styles.tagContainer}>
           <TextInput style={styles.tagText} 
           placeholder='Input Equipment Name'
-          placeholderTextColor='#84a98c'
+          placeholderTextColor='#B0B8AB'
           value={newTag}
           onChangeText={(e) => {setNewTag(e)}}
           />
@@ -78,7 +78,7 @@ const Inventory = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#84a98c',
+    backgroundColor: '#cad2c5',
   },
   headerText: {
     marginTop: 20,

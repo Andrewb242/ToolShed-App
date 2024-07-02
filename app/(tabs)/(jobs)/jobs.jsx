@@ -1,39 +1,101 @@
-import { View, Text, ScrollView } from 'react-native'
-import { Link } from 'expo-router'
-import React from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, SectionList } from 'react-native'
+import { useRouter } from 'expo-router'
+import React, { useState, useEffect, useCallback } from 'react'
+import { getJobsSorted, createNewJob, purgeData } from '../../../storage/json-storage-functions'
 
-//Data on job by job id
-const jobData = {
-  jobName: 'Example Job',
-  jobAddress: '123 Main St',
-  jobPhone: '(814)-555-5555',
-  jobDate: '2024/06/20',
-  jobEquipment: '["Hammer", "Nails", "Rake", "Screw Driver"]',
-  jobNote: 'Be careful with the windows.',
-  jobActive: true
-};
-
-//All Equipment in inventory
-const equipmentData = ["Hammer", "Nails", 'Rake', 'Screw Driver', 'Lawn Mower', 'Wheel Barrow', 'Filter Mask']
-
-const quoteData = [{ id: 1, expectedExpense: "40yd of Mulch", cost: "500" }, { id: 2, expectedExpense: "60 buckets of stones", cost: "200" }]
-const billData =[{ id: 1, expectedExpense: "30yd of Mulch", cost: "400" }, { id: 2, expectedExpense: "2 buckets of stones", cost: "5" }]
 
 const Jobs = () => {
+  
+  const router = useRouter()
+  const [jobs, setJobs] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchJobs = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const sortedJobs = await getJobsSorted()
+      setJobs(sortedJobs)
+      setIsLoading(false)
+    } catch (error) {
+      setError(err.message)
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
+
+  const handleCreateNewJob = useCallback(async () => {
+    try {
+      await createNewJob()
+      fetchJobs()
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [fetchJobs])
+
+
+  function renderItem({item}) {
+
+    if (!item) return null
+    return (
+    <TouchableOpacity style={styles.item} 
+      onPress={() => {
+        router.push({pathname:'jobDisplay', params: {jobId: item.jobId}})
+        }}
+      >
+      <Text style={styles.title}>{item.jobName}</Text>
+    </TouchableOpacity>
+    )
+  }
+
+  if (isLoading) {
+    return <Text>Loading...</Text>
+  }
+
+  if (error) {
+    return <Text>Error: {error}</Text>
+  }
+
+
   return (
       <View>
-        <ScrollView>
-          <Link href={{pathname:'jobDisplay', params: {
-            jobData: JSON.stringify(jobData),
-            quoteData: JSON.stringify(quoteData),
-            equipmentData: JSON.stringify(equipmentData),
-            billData: JSON.stringify(billData),
-            }}}>Test Job</Link>
-          <Text>Job 2</Text>
-          <Text>Job 3</Text>
-        </ScrollView>
+        <TouchableOpacity onPress={handleCreateNewJob}>
+          <Text>Create a New Job</Text>
+        </TouchableOpacity>
+        <SectionList
+          sections={jobs.length > 0 ? jobs : [{ title: 'No Jobs', data: [] }]}
+          keyExtractor={(item, index) => item.id || index.toString()}
+          renderItem={renderItem}
+          renderSectionHeader={({section: {title}}) => (
+            <Text style={styles.header}>{title}</Text>
+          )}
+          ListEmptyComponent={<Text style={styles.emptyText}>No jobs found</Text>}
+        />
       </View>
   )
 }
+
+const styles = StyleSheet.create({
+  item: {
+    padding: 20,
+    marginVertical: 8,
+  },
+  header: {
+    fontSize: 32,
+    backgroundColor: "#fff"
+  },
+  title: {
+    fontSize: 24,
+  },
+  emptyText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 50,
+  }
+
+})
 
 export default Jobs

@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const CustomTable = ({ rowState, updateRow, addRow, deleteRow, copyToClipboard, isBill=false }) => {
+const CustomTable = ({ jobState, updateRow, addRow, deleteRow, copyToClipboard, isBill=false }) => {
 
-  const renderRow = ({ item }) => (
-    <View style={styles.row}>
+  const renderRow = ( item ) => (
+    <View key={item.id} style={styles.row}>
       <TextInput
         style={styles.input}
         placeholder={!isBill ? 'Expected Expense' : 'Expense'}
@@ -27,22 +27,15 @@ const CustomTable = ({ rowState, updateRow, addRow, deleteRow, copyToClipboard, 
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={rowState}
-        renderItem={renderRow}
-        keyExtractor={item => item.id.toString()}
-        nestedScrollEnabled={true}
-        ListFooterComponent={
-        <View style={styles.footerContainer}>
-            <TouchableOpacity style={styles.addButton} onPress={addRow}>
-                <Text style={styles.footerText}>Add Row</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={copyToClipboard}>
-                <Text style={styles.footerText}>Copy</Text>
-            </TouchableOpacity>
-        </View>
-        }
-      />
+      {isBill ? jobState.billData.map(row => renderRow(row)) : jobState.quoteData.map(row => renderRow(row))}
+      <View style={styles.footerContainer}>
+          <TouchableOpacity style={styles.addButton} onPress={addRow}>
+              <Text style={styles.footerText}>Add Row</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={copyToClipboard}>
+              <Text style={styles.footerText}>Copy</Text>
+          </TouchableOpacity>
+      </View>
     </View>
   );
 };

@@ -1,5 +1,5 @@
 import { View, Text, TextInput, TouchableWithoutFeedback, Keyboard, TouchableOpacity, Modal, StyleSheet, ScrollView, FlatList, Alert } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useLocalSearchParams, useNavigation, Link } from 'expo-router'
 import { FontAwesome6 } from '@expo/vector-icons';
 import DatePicker, { getToday, getFormatedDate} from 'react-native-modern-datepicker'
@@ -8,31 +8,71 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import CustomTable from '../../../components/CustomTable';
 import * as Clipboard from 'expo-clipboard'
 
+import { getJobById, getEquipment } from '../../../storage/json-storage-functions';
+
 const JobDisplay = () => {
 
-  // Text input focus handling
-  const [addressIsFocused, setAddressIsFocused] = useState(false)
-  const [phoneIsFocused, setPhoneIsFocused] = useState(false)
-  const [noteIsFocused, setNoteIsFocused] = useState(false)
-
   // Parsing input data
-  const { jobData, quoteData, billData, equipmentData } = useLocalSearchParams()
 
-  const job = jobData ? JSON.parse(jobData) : {}
-  const quotes = quoteData ? JSON.parse(quoteData) : []
-  const bills = billData ? JSON.parse(billData) : []
-  const equipment = equipmentData ? JSON.parse(equipmentData) : []
+  const { jobId } = useLocalSearchParams()
 
-  const [jobDataState, setJobDataState] = useState({
-    jobName: job?.jobName,
-    jobAddress: job?.jobAddress,
-    jobPhone: job?.jobPhone,
-    jobDate: job?.jobDate,
-    jobEquipment: job.jobEquipment? JSON.parse(job.jobEquipment).sort():[],
-    jobNote: job?.jobNote,
-    jobActive: job?.jobActive,
-  })
+  const [jobDataState, setJobDataState] = useState(null);
+  const [equipment, setEquipment] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [addressIsFocused, setAddressIsFocused] = useState(false);
+  const [phoneIsFocused, setPhoneIsFocused] = useState(false);
+  const [noteIsFocused, setNoteIsFocused] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [equipmentPickerOpen, setEquipmentPickerOpen] = useState(false);
+  const [filteredEquipmentData, setFilteredEquipmentData] = useState([]);
 
+  const navigation = useNavigation()  
+
+
+  useEffect(() => {
+    const fetchJobById = async () => {
+      try {
+        setIsLoading(true)
+        const job = await getJobById(jobId)
+        setJobDataState(job)
+        const equipmentData = await getEquipment()
+        setEquipment(equipmentData)
+      } catch (error) {
+        setError(error.message)
+      } finally {
+        setIsLoading(false)
+      }
+    };
+    fetchJobById()
+  }, []);
+
+  useEffect(() => {
+    if (jobDataState && equipment) {
+      setFilteredEquipmentData(equipment.filter(item => !jobDataState.jobEquipment.includes(item)));
+    }
+  }, [jobDataState, equipment]);
+
+  useEffect(() => {
+    if (jobDataState) {
+      navigation.setOptions({
+        title: jobDataState.jobName || 'Job Details',
+        headerStyle: {
+          backgroundColor: '#52796f',
+        },
+        headerTintColor: '#fefae0',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      });
+    }
+  }, [navigation, jobDataState]);
+
+  if (isLoading) return <Text>Loading...</Text>
+  if (error) return <Text>{error}</Text>
+  if (!jobDataState) return <Text>No job data found</Text>
+
+  // Text input focus handling
   const formatPhoneNumber = (number) => {
     const cleaned = ('' + number).replace(/\D/g, '');
     const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
@@ -47,7 +87,6 @@ const JobDisplay = () => {
   
 
   //Datepicker logic
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const today = new Date()
   const startDate = getFormatedDate(today.setDate(today.getDate()), 'YYYY/MM/DD')
   function formatDate(date) {
@@ -55,62 +94,42 @@ const JobDisplay = () => {
     return date[1] + '/' + date[2] + '/' + date[0]
   }
   
-  //Navbar effects
-
-  const navigation = useNavigation()
-
-  useEffect(() => {
-    navigation.setOptions({
-      title: jobDataState.jobName || 'Job Details',
-      headerStyle: {
-        backgroundColor: '#52796f',
-      },
-      headerTintColor: '#fefae0',
-      headerTitleStyle: {
-        fontWeight: 'bold',
-      },
-    });
-  }, [navigation, jobDataState.jobName]);
-  
-  
   //Equipment handling
-  const [equipmentPickerOpen, setEquipmentPickerOpen] = useState(false)
   function handleEquipmentDelete(equipmentItem) {
     const equipment = jobDataState.jobEquipment.filter(item => item !== equipmentItem);
     setJobDataState({...jobDataState, jobEquipment: equipment})
   }
-  const filteredEquipmentData = equipment.filter(item => !jobDataState.jobEquipment.includes(item))
+
   function handleEquipmentAdd (equipmentItem) {
     setJobDataState({...jobDataState, jobEquipment: [...jobDataState.jobEquipment, equipmentItem]})
   }
 
   // Quote table handling
-  const [quoteRows, setQuoteRows] = useState(quotes)
   const addQuoteRow = () => {
-    setQuoteRows([...quoteRows, { id: quoteRows.length + 1, expectedExpense: '', cost: '' }]);
+    setJobDataState({...jobDataState, quoteData: [...quoteData, { id: quoteData.length + 1, expectedExpense: '', cost: '' }]});
   };
   const deleteQuoteRow = (id) => {
-    const filteredRows = quoteRows.filter(row => row.id !== id);
+    const filteredRows = jobDataState.quoteData.filter(row => row.id !== id);
     const reassignedRows = filteredRows.map((row, index) => ({
     ...row,
     id: index + 1
   }));
-  setQuoteRows(reassignedRows);
+  setJobDataState({...jobDataState, quoteData: reassignedRows});
   }
   const updateQuoteRow = (id, key, value) => {
-    const updatedRows = quoteRows.map(row => {
+    const updatedRows = jobDataState.quoteData.map(row => {
       if (row.id === id) {
         return { ...row, [key]: value }
       }
       return row;
     });
-    setQuoteRows(updatedRows)
+    setJobDataState({...jobDataState, quoteData: updatedRows})
   }
 
   async function copyQuoteToClipboard() {
     let copyData = ['Here is your quote information:']
     let total = 0
-    for (const element of quoteRows) {
+    for (const element of jobDataState.quoteData) {
       if (element.expectedExpense) {
         copyData = [...copyData, `${element.expectedExpense}: $${element.cost}`]
         total += parseFloat(element.cost)
@@ -127,17 +146,16 @@ const JobDisplay = () => {
   }
 
   // Bill table handling
-  const [billRows, setBillRows] = useState(bills)
   const addBillRow = () => {
-    setBillRows([...billRows, { id: billRows.length + 1, expectedExpense: '', cost: '' }]);
+    setJobDataState({...jobDataState, billData: [...billData, { id: billData.length + 1, expectedExpense: '', cost: '' }]});
   };
   const deleteBillRow = (id) => {
-    const filteredRows = billRows.filter(row => row.id !== id);
+    const filteredRows = jobDataState.billData.filter(row => row.id !== id);
     const reassignedRows = filteredRows.map((row, index) => ({
     ...row,
     id: index + 1
   }));
-  setBillRows(reassignedRows);
+  setJobDataState({...jobDataState, billData: reassignedRows});
   }
   const updateBillRow = (id, key, value) => {
     const updatedRows = billRows.map(row => {
@@ -146,13 +164,13 @@ const JobDisplay = () => {
       }
       return row;
     });
-    setBillRows(updatedRows)
+    setJobDataState({...jobDataState, billData: updatedRows})
   }
 
   async function copyBillToClipboard() {
     let copyData = ['Here is your bill information:']
     let total = 0
-    for (const element of billRows) {
+    for (const element of jobDataState.billData) {
       if (element.expectedExpense) {
         copyData = [...copyData, `${element.expectedExpense}: $${element.cost}`]
         total += parseFloat(element.cost)
@@ -301,7 +319,7 @@ const JobDisplay = () => {
       <View>
         <Text style={styles.headerText}>Quote:</Text>
         <CustomTable 
-        rowState={quoteRows}
+        jobState={jobDataState}
         addRow={addQuoteRow}
         deleteRow={deleteQuoteRow}
         updateRow={updateQuoteRow}
@@ -312,7 +330,7 @@ const JobDisplay = () => {
       <View>
         <Text style={styles.headerText}>Bill:</Text>
         <CustomTable 
-        rowState={billRows}
+        jobState={jobDataState}
         addRow={addBillRow}
         deleteRow={deleteBillRow}
         updateRow={updateBillRow}

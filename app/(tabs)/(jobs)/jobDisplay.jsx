@@ -8,7 +8,8 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import CustomTable from '../../../components/CustomTable';
 import * as Clipboard from 'expo-clipboard'
 
-import { getJobById, getEquipment } from '../../../storage/json-storage-functions';
+import { getJobById, getEquipment, saveJobDataById } from '../../../storage/json-storage-functions';
+import CustomNavbar from '../../../components/CustomNavbar';
 
 const JobDisplay = () => {
 
@@ -20,6 +21,7 @@ const JobDisplay = () => {
   const [equipment, setEquipment] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [nameIsFocuse, setNameIsFocuse] = useState(false)
   const [addressIsFocused, setAddressIsFocused] = useState(false);
   const [phoneIsFocused, setPhoneIsFocused] = useState(false);
   const [noteIsFocused, setNoteIsFocused] = useState(false);
@@ -27,8 +29,16 @@ const JobDisplay = () => {
   const [equipmentPickerOpen, setEquipmentPickerOpen] = useState(false);
   const [filteredEquipmentData, setFilteredEquipmentData] = useState([]);
 
-  const navigation = useNavigation()  
-
+  const handleOnSave = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      await saveJobDataById(jobDataState, jobId)
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [jobDataState])
 
   useEffect(() => {
     const fetchJobById = async () => {
@@ -53,21 +63,6 @@ const JobDisplay = () => {
     }
   }, [jobDataState, equipment]);
 
-  useEffect(() => {
-    if (jobDataState) {
-      navigation.setOptions({
-        title: jobDataState.jobName || 'Job Details',
-        headerStyle: {
-          backgroundColor: '#52796f',
-        },
-        headerTintColor: '#fefae0',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      });
-    }
-  }, [navigation, jobDataState]);
-
   if (isLoading) return <Text>Loading...</Text>
   if (error) return <Text>{error}</Text>
   if (!jobDataState) return <Text>No job data found</Text>
@@ -90,7 +85,7 @@ const JobDisplay = () => {
   const today = new Date()
   const startDate = getFormatedDate(today.setDate(today.getDate()), 'YYYY/MM/DD')
   function formatDate(date) {
-    date = date.split('/')
+    date = date.split(/[-\/]/)
     return date[1] + '/' + date[2] + '/' + date[0]
   }
   
@@ -106,7 +101,9 @@ const JobDisplay = () => {
 
   // Quote table handling
   const addQuoteRow = () => {
-    setJobDataState({...jobDataState, quoteData: [...quoteData, { id: quoteData.length + 1, expectedExpense: '', cost: '' }]});
+    setJobDataState(jobDataState => 
+      ({...jobDataState, quoteData: [...jobDataState.quoteData, { id: jobDataState.quoteData.length + 1, expectedExpense: '', cost: '' }]})
+    );
   };
   const deleteQuoteRow = (id) => {
     const filteredRows = jobDataState.quoteData.filter(row => row.id !== id);
@@ -114,7 +111,7 @@ const JobDisplay = () => {
     ...row,
     id: index + 1
   }));
-  setJobDataState({...jobDataState, quoteData: reassignedRows});
+  setJobDataState(jobDataState => ({...jobDataState, quoteData: reassignedRows}));
   }
   const updateQuoteRow = (id, key, value) => {
     const updatedRows = jobDataState.quoteData.map(row => {
@@ -123,7 +120,7 @@ const JobDisplay = () => {
       }
       return row;
     });
-    setJobDataState({...jobDataState, quoteData: updatedRows})
+    setJobDataState(jobDataState => ({...jobDataState, quoteData: updatedRows}))
   }
 
   async function copyQuoteToClipboard() {
@@ -147,7 +144,9 @@ const JobDisplay = () => {
 
   // Bill table handling
   const addBillRow = () => {
-    setJobDataState({...jobDataState, billData: [...billData, { id: billData.length + 1, expectedExpense: '', cost: '' }]});
+    setJobDataState(jobDataState => 
+      ({...jobDataState, billData: [...jobDataState.billData, { id: jobDataState.billData.length + 1, expectedExpense: '', cost: '' }]})
+    );
   };
   const deleteBillRow = (id) => {
     const filteredRows = jobDataState.billData.filter(row => row.id !== id);
@@ -155,7 +154,7 @@ const JobDisplay = () => {
     ...row,
     id: index + 1
   }));
-  setJobDataState({...jobDataState, billData: reassignedRows});
+  setJobDataState(jobDataState => ({...jobDataState, billData: reassignedRows}));
   }
   const updateBillRow = (id, key, value) => {
     const updatedRows = billRows.map(row => {
@@ -164,7 +163,7 @@ const JobDisplay = () => {
       }
       return row;
     });
-    setJobDataState({...jobDataState, billData: updatedRows})
+    setJobDataState(jobDataState => ({...jobDataState, billData: updatedRows}))
   }
 
   async function copyBillToClipboard() {
@@ -190,6 +189,22 @@ const JobDisplay = () => {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <ScrollView style={{flex: 1, backgroundColor: '#cad2c5'}}>
       <View>
+        <CustomNavbar 
+          handleOnSave={handleOnSave}
+        />
+
+        <Text style={styles.headerText}>Job Title:</Text>
+        <TextInput 
+          value={jobDataState.jobName} 
+          onChangeText={(e) => {setJobDataState({...jobDataState, jobName: e})}}
+          placeholder='Enter an Address'
+          placeholderTextColor='#84a98c'
+          selectTextOnFocus={true}
+          onFocus={()=>{setNameIsFocuse(true)}}
+          onBlur={()=>{setNameIsFocuse(false)}}
+          style={StyleSheet.compose(styles.textInput, nameIsFocuse && styles.textInputFucused)}
+        />
+
         <Text style={styles.headerText}>Address:</Text>
         <TextInput 
           value={jobDataState.jobAddress} 

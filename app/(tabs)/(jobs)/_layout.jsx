@@ -5,7 +5,7 @@ const JobsLayout = () => {
   return (
     <Stack>
       <Stack.Screen name='jobs' options={{headerShown: false}}/>
-      <Stack.Screen name='jobDisplay'/>
+      <Stack.Screen name='jobDisplay' options={{headerShown: false}}/>
     </Stack>
   )
 }

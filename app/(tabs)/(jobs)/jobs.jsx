@@ -1,5 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, SectionList } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, SectionList, RefreshControl } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useFocusEffect } from '@react-navigation/native'
 import React, { useState, useEffect, useCallback } from 'react'
 import { getJobsSorted, createNewJob, purgeData } from '../../../storage/json-storage-functions'
 
@@ -10,22 +11,32 @@ const Jobs = () => {
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   const fetchJobs = useCallback(async () => {
     try {
       setIsLoading(true)
       const sortedJobs = await getJobsSorted()
       setJobs(sortedJobs)
-      setIsLoading(false)
     } catch (error) {
       setError(err.message)
+    } finally {
       setIsLoading(false)
+      setRefreshing(false)
     }
   }, [])
 
-  useEffect(() => {
+  useFocusEffect(
+    useCallback(() => {
+      fetchJobs()
+    }, [fetchJobs])
+  )
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true)
     fetchJobs()
   }, [fetchJobs])
+
 
   const handleCreateNewJob = useCallback(async () => {
     try {
@@ -73,6 +84,9 @@ const Jobs = () => {
             <Text style={styles.header}>{title}</Text>
           )}
           ListEmptyComponent={<Text style={styles.emptyText}>No jobs found</Text>}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
       </View>
   )

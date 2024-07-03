@@ -102,7 +102,7 @@ export async function createNewJob() {
             jobName: 'New Job',
             jobAddress: '',
             jobPhone: '',
-            jobDate: '',
+            jobDate: new Date().toISOString().split('T')[0],
             jobEquipment: [],
             jobNote: '',
             jobActive: true,
@@ -116,7 +116,32 @@ export async function createNewJob() {
 
         existingData.jobs = [...existingData.jobs, newJob]
 
-        console.log(existingData)
+        await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
+        
+    } catch (error) {
+        console.log(Error(error))
+    }
+}
+
+export async function saveJobDataById(currentJobState, id) {
+    try {
+
+        let existingData = await getAllData()
+        const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+
+        if (!existingData.jobs.some(job => job.jobId === numericId)) {
+            throw new Error(`Job with id ${id} not found`);
+        }        
+
+        const newJobs = existingData.jobs.map((job) => {
+            if (job.jobId === numericId) {
+                return currentJobState
+            }
+            return job
+        })
+
+        existingData.jobs = newJobs
+
         await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
         
     } catch (error) {

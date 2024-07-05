@@ -19,7 +19,7 @@ const Jobs = () => {
       const sortedJobs = await getJobsSorted()
       setJobs(sortedJobs)
     } catch (error) {
-      setError(err.message)
+      setError(error.message)
     } finally {
       setIsLoading(false)
       setRefreshing(false)

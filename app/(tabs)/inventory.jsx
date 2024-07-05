@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, TouchableWithoutFeedback } from 'react-native'
-import React, { useState } from 'react'
-import { Ionicons } from '@expo/vector-icons';
-import EquipmentTag from '../../components/EquipmentTag';
+import React, { useCallback, useState } from 'react'
+import { Ionicons } from '@expo/vector-icons'
+import EquipmentTag from '../../components/EquipmentTag'
+import { addEquipment, deleteEquipment, getEquipment } from '../../storage/json-storage-functions'
+import { useFocusEffect } from '@react-navigation/native'
 
 const equipmentData = ["Hammer", "Nails", 'Rake', 'Screw Driver', 'Lawn Mower', 'Wheel Barrow', 'Filter Mask']
 
@@ -9,6 +11,26 @@ const Inventory = () => {
 
   const [equipment, setEquipment] = useState(equipmentData)
   const [newTag, setNewTag] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchEquipment = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const equipmentData = await getEquipment()
+      setEquipment(equipmentData)
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchEquipment()
+    }, [fetchEquipment])
+  )
 
   const showDeleteAlert = (equipmentItem) => {
     Alert.alert(
@@ -25,10 +47,64 @@ const Inventory = () => {
     );
   };
 
+  async function handleEquipmentDelete(equipmentItem) {
+    try {
+      setIsLoading(true)
+      const newEquipment = equipment.filter(item => item !== equipmentItem)
+      await deleteEquipment(equipmentItem)
+      setEquipment(newEquipment)
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  function handleEquipmentDelete(equipmentItem) {
-    const newEquipment = equipment.filter(item => item !== equipmentItem);
-    setEquipment(newEquipment)
+  async function handleEquipmentAdd(equipmentItem) {
+    try {
+      setIsLoading(true)
+      await addEquipment(equipmentItem)
+      setEquipment([...equipment, equipmentItem])
+      Alert.alert('Tag Added')
+      setNewTag('')
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+      <Text style={styles.headerText}>New Tag:</Text>
+      <View style={styles.newTagContainer}>
+        <View style={styles.tagContainer}>
+          <TextInput style={styles.tagText} 
+          placeholder='Input Equipment Name'
+          placeholderTextColor='#B0B8AB'
+          value={newTag}
+          editable={false}
+          />
+          <TouchableOpacity>
+            <Ionicons name="add-circle-outline" size={20} color="#cad2c5" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Text style={styles.headerText}>All Tags:</Text>
+      <View style={styles.equipmentContainer}>
+        <ScrollView style={{flex:1}}>
+          <View style={styles.equipmentDataContainer}>
+            <Text>Loading...</Text>
+          </View>
+        </ScrollView>
+      </View>
+    </View>
+    )
+  }
+
+  if (error) {
+    return <Text>Error: {error}</Text>
   }
 
   return (
@@ -41,12 +117,11 @@ const Inventory = () => {
           placeholderTextColor='#B0B8AB'
           value={newTag}
           onChangeText={(e) => {setNewTag(e)}}
+          editable={true}
           />
           <TouchableOpacity onPress={() => {
             if (!equipment.includes(newTag)) {
-              setEquipment([...equipment,newTag])
-              Alert.alert('Tag Added')
-              setNewTag('')
+              handleEquipmentAdd(newTag)
             } else {
               Alert.alert('Tags Must be Unique','\nTry to use numbers: \nExample: Shovel 1')
             }

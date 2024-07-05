@@ -63,10 +63,6 @@ const JobDisplay = () => {
     }
   }, [jobDataState, equipment]);
 
-  if (isLoading) return <Text>Loading...</Text>
-  if (error) return <Text>{error}</Text>
-  if (!jobDataState) return <Text>No job data found</Text>
-
   // Text input focus handling
   const formatPhoneNumber = (number) => {
     const cleaned = ('' + number).replace(/\D/g, '');
@@ -185,9 +181,18 @@ const JobDisplay = () => {
     }
   }
 
+
+  if (isLoading) return (
+    <View style={styles.container}>
+      <Text>Loading...</Text>
+    </View>
+    )
+  if (error) return <Text>{error}</Text>
+  if (!jobDataState) return <Text>No job data found</Text>
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <ScrollView style={{flex: 1, backgroundColor: '#cad2c5'}}>
+    <ScrollView style={styles.container}>
       <View>
         <CustomNavbar 
           handleOnSave={handleOnSave}
@@ -377,6 +382,10 @@ const JobDisplay = () => {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1, 
+    backgroundColor: '#cad2c5'
+  },
   textInput: {
     color: '#354f52',
     backgroundColor: '#cad2c5',

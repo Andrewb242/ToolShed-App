@@ -1,37 +1,17 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Text, View, TouchableOpacity, StyleSheet } from 'react-native'
 import { Agenda } from 'react-native-calendars'
-import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router'
+import { getJobsSorted } from '../../storage/json-storage-functions'
+import { useFocusEffect } from '@react-navigation/native'
 
-const equipmentData = ["Hammer", "Nails", 'Rake', 'Screw Driver', 'Lawn Mower', 'Wheel Barrow', 'Filter Mask']
-const quoteData = [{ id: 1, expectedExpense: "40yd of Mulch", cost: "500" }, { id: 2, expectedExpense: "60 buckets of stones", cost: "200" }]
-const billData =[{ id: 1, expectedExpense: "30yd of Mulch", cost: "400" }, { id: 2, expectedExpense: "2 buckets of stones", cost: "5" }]
-
-const jobData = [{
-  jobName: 'Example Job',
-  jobAddress: '123 Main St',
-  jobPhone: '(814)-555-5555',
-  jobDate: '2024-06-24',
-  jobEquipment: '["Hammer", "Nails", "Rake", "Screw Driver"]',
-  jobNote: 'Be careful with the windows.',
-  jobActive: true
-}, 
-{
-  jobName: 'Example Job',
-  jobAddress: '123 Main St',
-  jobPhone: '(814)-555-5555',
-  jobDate: '2024-06-24',
-  jobEquipment: '["Hammer", "Nails", "Rake", "Screw Driver"]',
-  jobNote: 'Be careful with the windows.',
-  jobActive: true
-}]
 
 
 const Calender = () => {
 
   const [refreshing, setRefreshing] = useState(false);
-
   const [itemsState, setItemsState] = useState({})
+
   const router = useRouter()
 
   const timeToString = (time) => {
@@ -39,53 +19,72 @@ const Calender = () => {
     return date.toISOString().split('T')[0];
   }
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => {
-      loadItems({ timestamp: new Date().getTime() });
-      setRefreshing(false);
-    }, 2000);
-  }, []);
+  const onRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true)
+      await loadItems({ timestamp: new Date().getTime() })
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [loadItems]);
 
-  const loadItems = (day) => {
+  const fetchJobs = useCallback(async () => {
+    try {
+      setRefreshing(true)
+      const sortedJobs = await getJobsSorted()
+      const activeJobs = sortedJobs[0].data
+      return activeJobs
+    } catch (error) {
+      setError(error.message)
+      return []
+    } finally {
+      setRefreshing(false)
+    }
+  }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      loadItems({ timestamp: new Date().getTime() })
+    }, [loadItems])
+  )
+
+  const loadItems = useCallback(async (day) => {
+
+    setItemsState({})
+
     const items = itemsState || {};
+    const jobs = await fetchJobs()
 
-    setTimeout(() => {
-      for (let i = -15; i < 85; i++) {
-        const time = day.timestamp + i * 24 * 60 * 60 * 1000;
-        const strTime = timeToString(time);
+    for (let i = -15; i < 85; i++) {
+      const time = day.timestamp + i * 24 * 60 * 60 * 1000;
+      const strTime = timeToString(time)
 
-        if (!items[strTime]) {
-          items[strTime] = [];
+      items[strTime] = [];
 
-          const jobsForDay = jobData.filter(item => item.jobDate === strTime)
-          jobsForDay.forEach(job => {
-            items[strTime].push({
-              name: job.jobName,
-              height: Math.max(50, Math.floor(Math.random() * 150)),
-              jobData: job,
-              day: strTime
-            });
-          })
-        }
-      }
-
-      setItemsState(items);
-    }, 1000);
-  };
+      const jobsForDay = jobs.filter(item => item.jobDate === strTime)
+      jobsForDay.forEach(job => {
+        items[strTime].push({
+          name: job.jobName,
+          height: Math.max(50, Math.floor(Math.random() * 150)),
+          jobId: job.jobId,
+          day: strTime
+        });
+      })
+    }
+    setItemsState(items)
+    return true
+  },[fetchJobs,timeToString])
 
   const renderDay = (item) => {
     return (
       <TouchableOpacity style={styles.itemContainer}
       onPress={() => {
-        console.log(item.jobData)
-        router.push({
+        router.navigate({
           pathname: '/(jobs)/jobDisplay',
           params: {
-            jobData: JSON.stringify(item.jobData),
-            quoteData: JSON.stringify(quoteData),
-            equipmentData: JSON.stringify(equipmentData),
-            billData: JSON.stringify(billData),
+            jobId: JSON.stringify(item.jobId),
           }
         })
       }}

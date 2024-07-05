@@ -227,7 +227,7 @@ export async function getJobsByDay(date) {
     try {
         const existingData = await getAllData()
 
-        const jobs = existingData.jobs.filter(job => job.jobDate === date)
+        const jobs = existingData.jobs.filter(job => job.jobDate === date && job.jobActive === true)
 
         return jobs
 
@@ -242,13 +242,13 @@ export async function addTruck(truckName) {
         let existingData = await getAllData()
         const existingTrucks = existingData.trucks
 
-        if (existingTrucks.some(truck => truck === truckName)) {
+        if (existingTrucks.some(truck => truck.truckName === truckName)) {
             throw new Error(`${truckName} already exists`)
         }
 
-        const newTrucks = [...existingTrucks, truckName]
+        const newTrucks = [...existingTrucks, {truckName: truckName, truckEquipment: []}]
 
-        existingData.truck = newTrucks
+        existingData.trucks = newTrucks
 
         await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
 
@@ -261,15 +261,63 @@ export async function deleteTruck(truckName) {
     try {
 
         let existingData = await getAllData()
-        const existingTrucks = existingData.truckName
+        const existingTrucks = existingData.trucks
 
-        if (!existingTrucks.some(truck => truck === truckName)) {
+        if (!existingTrucks.some(truck => truck.truckName === truckName)) {
             throw new Error(`${truckName} doesn't exist`)
         }
 
-        const newTrucks = existingTrucks.filter(truck => truck !== truckName)
+        const newTrucks = existingTrucks.filter(truck => truck.truckName !== truckName)
 
         existingData.trucks = newTrucks
+
+        await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
+
+    } catch (error) {
+        console.log(Error(error))
+    }
+}
+
+export async function addTruckEquipment(truckName, equipmentItem) {
+    try {
+
+        let existingData = await getAllData()
+        const existingTrucks = existingData.trucks
+
+        if (!existingTrucks.some(truck => truck.truckName === truckName)) {
+            throw new Error(`${truckName} doesn't exist`)
+        }
+
+        const theTruck = existingTrucks.find(truck => truck.truckName === truckName)
+        const index = existingTrucks.indexOf(theTruck)
+
+        const newEquipment = [...theTruck.truckEquipment, equipmentItem]
+
+        existingData.trucks[index].truckEquipment = newEquipment
+
+        await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
+
+    } catch (error) {
+        console.log(Error(error))
+    }
+}
+
+export async function deleteTruckEquipment(truckName, equipmentItem) {
+    try {
+
+        let existingData = await getAllData()
+        const existingTrucks = existingData.trucks
+
+        if (!existingTrucks.some(truck => truck.truckName === truckName)) {
+            throw new Error(`${truckName} doesn't exist`)
+        }
+
+        const theTruck = existingTrucks.find(truck => truck.truckName === truckName)
+        const index = existingTrucks.indexOf(theTruck)
+
+        const newEquipment = theTruck.truckEquipment.filter(item => item!==equipmentItem)
+
+        existingData.trucks[index].truckEquipment = newEquipment
 
         await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
 

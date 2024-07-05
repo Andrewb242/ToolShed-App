@@ -192,11 +192,12 @@ const JobDisplay = () => {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <ScrollView style={styles.container}>
-      <View>
+    <View style={styles.container}>
         <CustomNavbar 
           handleOnSave={handleOnSave}
         />
+    <ScrollView>
+      <View>
 
         <Text style={styles.headerText}>Job Title:</Text>
         <TextInput 
@@ -377,6 +378,7 @@ const JobDisplay = () => {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </View>
     </TouchableWithoutFeedback>
   )
 }

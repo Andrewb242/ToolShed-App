@@ -1,14 +1,15 @@
 import { View, Text, TextInput, TouchableWithoutFeedback, Keyboard, TouchableOpacity, Modal, StyleSheet, ScrollView, FlatList, Alert } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
-import { useLocalSearchParams, useNavigation, Link } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FontAwesome6 } from '@expo/vector-icons';
 import DatePicker, { getToday, getFormatedDate} from 'react-native-modern-datepicker'
 import EquipmentTag from '../../../components/EquipmentTag';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import CustomTable from '../../../components/CustomTable';
 import * as Clipboard from 'expo-clipboard'
+import formatJob from '../../../storage/CSV-Formatting';
 
-import { getJobById, getEquipment, saveJobDataById } from '../../../storage/json-storage-functions';
+import { getJobById, getEquipment, saveJobDataById, deleteJobDataById } from '../../../storage/json-storage-functions';
 import CustomNavbar from '../../../components/CustomNavbar';
 
 const JobDisplay = () => {
@@ -28,6 +29,10 @@ const JobDisplay = () => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [equipmentPickerOpen, setEquipmentPickerOpen] = useState(false);
   const [filteredEquipmentData, setFilteredEquipmentData] = useState([]);
+  const [savedJobState, setSavedJobState] = useState(null)
+  const [isEditting, setIsEditting] = useState(false)
+
+  const router = useRouter()
 
   const handleOnSave = useCallback(async () => {
     try {
@@ -46,6 +51,8 @@ const JobDisplay = () => {
         setIsLoading(true)
         const job = await getJobById(jobId)
         setJobDataState(job)
+        setSavedJobState(job)
+        setIsEditting(false)
         const equipmentData = await getEquipment()
         setEquipment(equipmentData)
       } catch (error) {
@@ -62,6 +69,13 @@ const JobDisplay = () => {
       setFilteredEquipmentData(equipment.filter(item => !jobDataState.jobEquipment.includes(item)));
     }
   }, [jobDataState, equipment]);
+
+  // Check if changes have been made
+  useEffect(() => {
+    if (jobDataState !== savedJobState) {
+      setIsEditting(true)
+    }
+  }, [jobDataState])
 
   // Text input focus handling
   const formatPhoneNumber = (number) => {
@@ -100,7 +114,7 @@ const JobDisplay = () => {
     setJobDataState(jobDataState => 
       ({...jobDataState, quoteData: [...jobDataState.quoteData, { id: jobDataState.quoteData.length + 1, expectedExpense: '', cost: '' }]})
     );
-  };
+  }
   const deleteQuoteRow = (id) => {
     const filteredRows = jobDataState.quoteData.filter(row => row.id !== id);
     const reassignedRows = filteredRows.map((row, index) => ({
@@ -153,7 +167,7 @@ const JobDisplay = () => {
   setJobDataState(jobDataState => ({...jobDataState, billData: reassignedRows}));
   }
   const updateBillRow = (id, key, value) => {
-    const updatedRows = billRows.map(row => {
+    const updatedRows = jobDataState.billData.map(row => {
       if (row.id === id) {
         return { ...row, [key]: value }
       }
@@ -181,6 +195,42 @@ const JobDisplay = () => {
     }
   }
 
+  // Deletion Handling
+
+  function handleDelete() {
+    Alert.alert(
+      'Confirm Delete',
+      'This job and all of its data will be permanently deleted',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        { text: 'Confirm', onPress: async () => {
+          try {
+            await deleteJobDataById(jobId)
+            router.back()
+          } catch (error) {
+            setError(error)
+          }
+        }
+       }
+      ],
+      { cancelable: false }
+    )
+  }
+
+  // CSV Export
+
+  async function handleCopyDataCSV() {
+    try {
+      const data = formatJob(jobDataState)
+      Clipboard.setStringAsync(data)
+      Alert.alert('Copied')
+    } catch (error) {
+      setError(error.message)
+    }
+  }
 
   if (isLoading) return (
     <View style={styles.container}>
@@ -191,11 +241,13 @@ const JobDisplay = () => {
   if (!jobDataState) return <Text>No job data found</Text>
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.container}>
-        <CustomNavbar 
-          handleOnSave={handleOnSave}
-        />
+      <CustomNavbar 
+        handleOnSave={handleOnSave}
+        handleCopy={handleCopyDataCSV}
+        isEditting={isEditting}
+      />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <ScrollView>
       <View>
 
@@ -362,24 +414,24 @@ const JobDisplay = () => {
 
       <View style={{marginTop:50}}>
         {jobDataState.jobActive ? (
-          <TouchableOpacity activeOpacity={0.7}  onPress={() => {setJobDataState({...jobDataState, jobActive: false})}}>
-            <Text>Archive</Text>
+          <TouchableOpacity activeOpacity={0.7} style={styles.archiveButton} onPress={() => {setJobDataState({...jobDataState, jobActive: false})}}>
+            <Text style={styles.archiveButtonText}>Archive</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity activeOpacity={0.7} onPress={() => {setJobDataState({...jobDataState, jobActive: true})}}>
-            <Text>Activate</Text>
+          <TouchableOpacity activeOpacity={0.7} style={styles.activateButton} onPress={() => {setJobDataState({...jobDataState, jobActive: true})}}>
+            <Text style={styles.archiveButtonText}>Activate</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <View>
-        <TouchableOpacity>
-          <Text>Delete</Text>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.archiveButtonText}>Delete</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
-    </View>
     </TouchableWithoutFeedback>
+    </View>
   )
 }
 
@@ -453,6 +505,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#52796f',
     marginTop: 2,
   },
+  archiveButton: {
+    marginHorizontal: 15,
+    padding: 20,
+    backgroundColor: '#2f3e46',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  activateButton: {
+    marginHorizontal: 15,
+    padding: 20,
+    backgroundColor: '#354f52',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  archiveButtonText: {
+    color: '#cad2c5',
+    fontSize: 22
+  },
+  deleteButton: {
+    marginHorizontal: 15,
+    padding: 20,
+    backgroundColor: '#52796f',
+    alignItems: 'center',
+    marginVertical: 15,
+    borderRadius: 10,
+  }
 })
 
 const modalStyles = StyleSheet.create({

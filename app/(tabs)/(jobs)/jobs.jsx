@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet, SectionList, RefreshControl } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useFocusEffect } from '@react-navigation/native'
-import React, { useState, useEffect, useCallback } from 'react'
-import { getJobsSorted, createNewJob, purgeData } from '../../../storage/json-storage-functions'
+import React, { useState, useCallback } from 'react'
+import { getJobsSorted, createNewJob } from '../../../storage/json-storage-functions'
 
 
 const Jobs = () => {
@@ -63,7 +63,14 @@ const Jobs = () => {
   }
 
   if (isLoading) {
-    return <Text>Loading...</Text>
+    return( 
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.createButton}>
+          <Text style={styles.createButtonText}>Create a New Job</Text>
+      </TouchableOpacity>
+      <Text>Loading...</Text>
+    </View>
+    )
   }
 
   if (error) {
@@ -72,9 +79,9 @@ const Jobs = () => {
 
 
   return (
-      <View>
-        <TouchableOpacity onPress={handleCreateNewJob}>
-          <Text>Create a New Job</Text>
+      <View style={styles.container}>
+        <TouchableOpacity style={styles.createButton} onPress={handleCreateNewJob}>
+          <Text style={styles.createButtonText}>Create a New Job</Text>
         </TouchableOpacity>
         <SectionList
           sections={jobs.length > 0 ? jobs : [{ title: 'No Jobs', data: [] }]}
@@ -93,16 +100,34 @@ const Jobs = () => {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#cad2c5',
+    flex: 1
+  },
+  createButton: {
+    padding: 20,
+    backgroundColor: '#354f52'
+  },
+  createButtonText: {
+    fontSize: 22,
+    color: '#cad2c5'
+  },
   item: {
     padding: 20,
     marginVertical: 8,
+    marginHorizontal: 20,
+    backgroundColor: '#84a98c'
   },
   header: {
-    fontSize: 32,
-    backgroundColor: "#fff"
+    fontSize: 24,
+    backgroundColor: "#52796f",
+    color: '#cad2c5',
+    padding: 5,
+    paddingHorizontal: 15
   },
   title: {
     fontSize: 24,
+    color: '#cad2c5'
   },
   emptyText: {
     fontSize: 18,

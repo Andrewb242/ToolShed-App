@@ -1,9 +1,10 @@
 import { View, Text, Image, StyleSheet } from 'react-native'
 import React from 'react'
 import { Tabs } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 
-import icons from '../../constants/icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import icons from '../../constants/icons'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const TabIcon = ({ icon, color, name, focused}) => {
 
@@ -40,6 +41,8 @@ const TabIcon = ({ icon, color, name, focused}) => {
 
 const TabsLayout = () => {
   return (
+    <>
+    <StatusBar style="light" translucent={true}/>
     <SafeAreaView style={{flex:1}}>
         <Tabs
             options={{
@@ -120,7 +123,9 @@ const TabsLayout = () => {
             />
         </Tabs>
     </SafeAreaView>
+    </>
   )
+  
 }
 
 export default TabsLayout

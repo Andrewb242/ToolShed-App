@@ -84,7 +84,7 @@ export async function getJobsSorted() {
                 data: activeJobs
             },
             {
-                title: 'Inactive Jobs',
+                title: 'Archived Jobs',
                 data: inactiveJobs
             }
         ]
@@ -164,9 +164,9 @@ export async function deleteJobDataById(id) {
             throw new Error(`Job with id ${id} not found`)
         }        
 
-        const newJobsBadIds = existingData.jobs.filter(job => job.jobId === numericId)
+        const newJobsBadIds = existingData.jobs.filter(job => job.jobId !== numericId)
 
-        const newJobs = newJobsBadIds.map((job,key) => {job.jobId = key})
+        const newJobs = newJobsBadIds.map((job, index) => ({...job, jobId: index + 1}))
 
         existingData.jobs = newJobs
 
@@ -203,7 +203,7 @@ export async function addEquipment(equipmentName) {
 export async function deleteEquipment(equipmentName) {
     try {
 
-        let existingData = await getAllData()
+        const existingData = await getAllData()
         const existingEquipment = existingData.equipment
 
         if (!existingEquipment.some(equipment => equipment === equipmentName)) {
@@ -212,9 +212,24 @@ export async function deleteEquipment(equipmentName) {
 
         const newEquipment = existingEquipment.filter(equipment => equipment !== equipmentName)
 
-        existingData.equipment = newEquipment
+        
+        const newJobs = existingData.jobs.map(job => ({
+            ...job,
+            jobEquipment: job.jobEquipment.filter(equipment => equipment !== equipmentName)
+        }))
 
-        await AsyncStorage.setItem(globalKey, JSON.stringify(existingData))
+        const newTrucks = existingData.trucks.map(truck => ({
+            ...truck,
+            truckEquipment: truck.truckEquipment.filter(equipment => equipment !== equipmentName)
+        }))
+
+        const newData = {
+            jobs: newJobs,
+            equipment: newEquipment,
+            trucks: newTrucks
+        }
+        
+        await AsyncStorage.setItem(globalKey, JSON.stringify(newData))
 
     } catch (error) {
         console.log(Error(error))

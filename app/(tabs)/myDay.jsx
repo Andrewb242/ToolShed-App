@@ -168,7 +168,7 @@ const myDay = () => {
                 router.navigate({
                   pathname: '/(jobs)/jobDisplay',
                   params: {
-                    jobId: index + 1,
+                    jobId: job.jobId,
                   }
                 })
               }}>

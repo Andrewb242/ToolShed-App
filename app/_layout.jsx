@@ -3,10 +3,12 @@ import { Stack } from 'expo-router'
 import { View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 
+
 const RootLayout = () => {
     
     return (
         <>
+            <StatusBar style="light" translucent={true}/>
             <View style={{flex: 1}}>
                 <Stack>
                     <Stack.Screen name="index" options={{headerShown: false}}/>
@@ -29,7 +31,6 @@ const RootLayout = () => {
                 bottom: 0,
             }}
             />
-            <StatusBar style="light" />
         </>
     )
 }

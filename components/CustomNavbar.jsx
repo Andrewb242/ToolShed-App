@@ -3,26 +3,30 @@ import React from 'react'
 import { AntDesign } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 
-const CustomNavbar = ({ handleOnSave }) => {
+const CustomNavbar = ({ handleOnSave, isEditting, handleCopy }) => {
 
     const router = useRouter()
 
     const handleBackButton = () => {
-         Alert.alert(
-           'Confirm Cancel',
-           'All edits will be undone',
-           [
-             {
-               text: 'Cancel',
-               style: 'cancel'
-             },
-             { text: 'Confirm', onPress: () => {router.back()} }
-           ],
-           { cancelable: false }
-         )
+      if (isEditting) {
+        Alert.alert(
+          'Confirm Cancel',
+          'All edits will be undone',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            },
+            { text: 'Confirm', onPress: () => {router.back()} }
+          ],
+          { cancelable: false }
+        )
+      } else {
+        router.back()
+      }
      }
    
-     const handleEditButton = () => {
+     const handleSaveButton = () => {
          Alert.alert(
            'Confirm Changes',
            'All changes will be saved',
@@ -48,9 +52,15 @@ const CustomNavbar = ({ handleOnSave }) => {
         <TouchableOpacity style={styles.backButton} onPress={handleBackButton}>
           <AntDesign name="left" size={20} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.editButton} onPress={handleEditButton}>
-          <Text>Save</Text>
-        </TouchableOpacity>
+        {isEditting ? (
+          <TouchableOpacity style={styles.editButton} onPress={handleSaveButton}>
+            <Text>Save</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.editButton} onPress={handleCopy}>
+            <Text>Copy</Text>
+          </TouchableOpacity>
+        )}
       </View>
      )
 }
